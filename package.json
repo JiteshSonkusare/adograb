@@ -1,0 +1,53 @@
+{
+  "name": "adograb",
+  "version": "0.1.0",
+  "description": "Browse and clone Azure DevOps repositories from the terminal.",
+  "type": "module",
+  "bin": {
+    "adograb": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "azure-devops",
+    "ado",
+    "cli",
+    "git",
+    "clone",
+    "repositories",
+    "devops"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsx src/index.ts",
+    "lint": "eslint src",
+    "format": "prettier --write src",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.0",
+    "axios": "^1.7.9",
+    "commander": "^12.1.0",
+    "conf": "^13.0.2",
+    "execa": "^9.5.1",
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "eslint": "^9.15.0",
+    "globals": "^15.12.0",
+    "prettier": "^3.3.3",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0",
+    "vitest": "^2.1.5"
+  }
+}
