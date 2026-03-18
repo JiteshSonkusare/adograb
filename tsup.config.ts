@@ -8,6 +8,7 @@ export default defineConfig({
   clean: true,
   splitting: false,
   sourcemap: false,
+  external: ['@inquirer/prompts', 'axios', 'commander', 'conf', 'execa', 'keytar'],
   banner: {
     js: '#!/usr/bin/env node',
   },

@@ -166,10 +166,24 @@ You can watch it run under the **Actions** tab in your GitHub repo.
 
 ---
 
-### Manual publish (skip GitHub Actions)
+### Publish from local machine
 
-If you want to publish directly from your machine:
+If you want to publish directly from your machine without GitHub Actions:
 
+**Step 1 — Commit your changes**
+```bash
+git add .
+git commit -m "your change description"
+```
+
+**Step 2 — Bump the version** (this updates `package.json` automatically)
+```bash
+npm version patch   # bug fix        0.1.0 → 0.1.1
+npm version minor   # new feature    0.1.0 → 0.2.0
+npm version major   # breaking change  0.1.0 → 1.0.0
+```
+
+**Step 3 — Build and publish**
 ```bash
 npm run build
 npm publish
