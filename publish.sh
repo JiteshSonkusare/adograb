@@ -54,7 +54,7 @@ git commit -m "$commit_message"
 echo "[3/4] Bumping version ($bump_type)..."
 npm version "$bump_type" --no-git-tag-version
 new_version=$(node -p "require('./package.json').version")
-git add package.json
+git add package.json package-lock.json
 git commit -m "chore: bump version to $new_version"
 
 echo "[4/4] Pushing to remote..."
