@@ -36,15 +36,26 @@ export async function runPostCloneFlow(
     return;
   }
 
-  const lastUsedIdeId = configStore.get(LAST_USED_IDE_KEY) as string | undefined;
-  const selected = await promptIdeSelection(ides, lastUsedIdeId);
+  let lastUsedIdeId = configStore.get(LAST_USED_IDE_KEY) as string | undefined;
 
-  if (!selected) {
-    Formatter.warn('Cancelled.');
+  while (true) {
+    const selected = await promptIdeSelection(ides, lastUsedIdeId);
+
+    if (!selected) {
+      Formatter.warn('Cancelled.');
+      return;
+    }
+
+    const launch = launchIde(selected, repoPath);
+
+    if (!launch.launched) {
+      Formatter.warn(launch.reason ?? 'Could not open IDE.');
+      lastUsedIdeId = undefined;
+      continue;
+    }
+
+    configStore.set(LAST_USED_IDE_KEY, selected.id);
+    Formatter.success(`Opening in ${selected.label}...`);
     return;
   }
-
-  configStore.set(LAST_USED_IDE_KEY, selected.id);
-  launchIde(selected, repoPath);
-  Formatter.success(`Opening in ${selected.label}...`);
 }

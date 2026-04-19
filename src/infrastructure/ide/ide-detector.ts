@@ -10,13 +10,14 @@ export interface DetectedIde {
 const VSWHERE_PATH =
   'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe';
 
-async function isCommandAvailable(command: string): Promise<boolean> {
+async function resolveCommandPath(command: string): Promise<string | null> {
   try {
     const checker = process.platform === 'win32' ? 'where' : 'which';
-    await execa(checker, [command], { stdio: 'pipe' });
-    return true;
+    const result = await execa(checker, [command], { stdio: 'pipe' });
+    const firstPath = result.stdout.trim().split(/\r?\n/)[0]?.trim();
+    return firstPath || null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -38,24 +39,24 @@ async function findVisualStudioDevenv(): Promise<string | null> {
 }
 
 export async function detectInstalledIdes(): Promise<DetectedIde[]> {
-  const [vsCode, cursor, devenvPath, rider, webstorm, idea] = await Promise.all([
-    isCommandAvailable('code'),
-    isCommandAvailable('cursor'),
+  const [vsCodePath, cursorPath, devenvPath, riderPath, webstormPath, ideaPath] = await Promise.all([
+    resolveCommandPath('code'),
+    resolveCommandPath('cursor'),
     findVisualStudioDevenv(),
-    isCommandAvailable('rider'),
-    isCommandAvailable('webstorm'),
-    isCommandAvailable('idea'),
+    resolveCommandPath('rider'),
+    resolveCommandPath('webstorm'),
+    resolveCommandPath('idea'),
   ]);
 
   const ides: DetectedIde[] = [];
 
   // VS Code is always listed first when available
-  if (vsCode) ides.push({ id: 'vscode', label: 'VS Code', command: 'code' });
-  if (cursor) ides.push({ id: 'cursor', label: 'Cursor', command: 'cursor' });
+  if (vsCodePath) ides.push({ id: 'vscode', label: 'VS Code', command: vsCodePath });
+  if (cursorPath) ides.push({ id: 'cursor', label: 'Cursor', command: cursorPath });
   if (devenvPath) ides.push({ id: 'visualstudio', label: 'Visual Studio', command: devenvPath });
-  if (rider) ides.push({ id: 'rider', label: 'Rider', command: 'rider' });
-  if (webstorm) ides.push({ id: 'webstorm', label: 'WebStorm', command: 'webstorm' });
-  if (idea) ides.push({ id: 'idea', label: 'IntelliJ IDEA', command: 'idea' });
+  if (riderPath) ides.push({ id: 'rider', label: 'Rider', command: riderPath });
+  if (webstormPath) ides.push({ id: 'webstorm', label: 'WebStorm', command: webstormPath });
+  if (ideaPath) ides.push({ id: 'idea', label: 'IntelliJ IDEA', command: ideaPath });
 
   return ides;
 }
