@@ -3,7 +3,7 @@ import { IAuthHeaderProvider } from '../ports/auth-provider.port';
 import { IGitService } from '../ports/git-service.port';
 import { ISecretStore } from '../ports/secret-store.port';
 import { RepositoryDto } from '../dto/repository.dto';
-import { CloneError, RepositoryNotFoundError } from '../errors/app-errors';
+import { RepositoryNotFoundError } from '../errors/app-errors';
 import { KEYTAR_SERVICE, KEYTAR_ACCOUNT_PAT } from '../../shared/constants/app.constants';
 import path from 'path';
 import fs from 'fs';
@@ -19,6 +19,7 @@ export interface CloneRepositoryInput {
 export interface CloneRepositoryResult {
   repository: RepositoryDto;
   clonedTo: string;
+  alreadyExisted: boolean;
 }
 
 export class CloneRepositoryUseCase {
@@ -46,9 +47,7 @@ export class CloneRepositoryUseCase {
     const targetPath = path.join(input.cloneRoot, repository.name);
 
     if (fs.existsSync(targetPath)) {
-      throw new CloneError(
-        `Directory already exists: ${targetPath}\n   Delete or rename it, then try again.`
-      );
+      return { repository, clonedTo: targetPath, alreadyExisted: true };
     }
 
     let pat: string | undefined;
@@ -65,6 +64,6 @@ export class CloneRepositoryUseCase {
       pat,
     });
 
-    return { repository, clonedTo: targetPath };
+    return { repository, clonedTo: targetPath, alreadyExisted: false };
   }
 }

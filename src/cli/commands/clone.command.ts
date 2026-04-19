@@ -7,6 +7,7 @@ import { PatAuthHeaderProvider } from '../../infrastructure/auth/pat-auth-provid
 import { DefaultAuthHeaderProvider } from '../../infrastructure/auth/default-auth-provider';
 import { ValidateSetupUseCase } from '../../application/use-cases/validate-setup.use-case';
 import { CloneRepositoryUseCase } from '../../application/use-cases/clone-repository.use-case';
+import { runPostCloneFlow } from '../helpers/post-clone-flow';
 import { Formatter } from '../formatters/output.formatter';
 import { AppError } from '../../application/errors/app-errors';
 import { KEYTAR_SERVICE, KEYTAR_ACCOUNT_PAT } from '../../shared/constants/app.constants';
@@ -52,14 +53,22 @@ export function registerCloneCommand(program: Command): void {
           authMode: config.authMode,
         });
 
-        Formatter.success(
-          `Cloned "${result.repository.name}" to:\n   ${result.clonedTo}`
-        );
+        if (!result.alreadyExisted) {
+          Formatter.success(`Cloned "${result.repository.name}" to:\n   ${result.clonedTo}`);
+        } else {
+          Formatter.info(`Repository already exists at:\n   ${result.clonedTo}`);
+        }
+
+        await runPostCloneFlow(result.clonedTo, result.alreadyExisted, gitService, configStore);
       } catch (error) {
         if (error instanceof AppError) {
           Formatter.error(error.message);
         } else if (error instanceof Error) {
-          Formatter.error(error.message);
+          if (error.message.includes('User force closed')) {
+            Formatter.warn('Cancelled.');
+          } else {
+            Formatter.error(error.message);
+          }
         } else {
           Formatter.error('An unexpected error occurred.');
         }

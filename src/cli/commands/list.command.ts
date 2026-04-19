@@ -9,10 +9,12 @@ import { ValidateSetupUseCase } from '../../application/use-cases/validate-setup
 import { ListRepositoriesUseCase } from '../../application/use-cases/list-repositories.use-case';
 import { CloneRepositoryUseCase } from '../../application/use-cases/clone-repository.use-case';
 import { promptRepoSelection, promptConfirmClone } from '../prompts/repo-select.prompts';
+import { runPostCloneFlow } from '../helpers/post-clone-flow';
 import { Formatter } from '../formatters/output.formatter';
 import { AppError } from '../../application/errors/app-errors';
 import { KEYTAR_SERVICE, KEYTAR_ACCOUNT_PAT } from '../../shared/constants/app.constants';
 import path from 'path';
+import fs from 'fs';
 
 export function registerListCommand(program: Command): void {
   program
@@ -62,14 +64,18 @@ export async function runInteractiveList(): Promise<void> {
 
     const selected = await promptRepoSelection(repos);
     const targetPath = path.join(config.cloneRoot, selected.name);
+    const alreadyExists = fs.existsSync(targetPath);
 
-    const confirmed = await promptConfirmClone(selected.name, targetPath);
-    if (!confirmed) {
-      Formatter.warn('Clone cancelled.');
-      return;
+    if (!alreadyExists) {
+      const confirmed = await promptConfirmClone(selected.name, targetPath);
+      if (!confirmed) {
+        Formatter.warn('Clone cancelled.');
+        return;
+      }
+      Formatter.info(`Cloning "${selected.name}"...`);
+    } else {
+      Formatter.info(`Repository already exists at:\n   ${targetPath}`);
     }
-
-    Formatter.info(`Cloning "${selected.name}"...`);
 
     const cloneUseCase = new CloneRepositoryUseCase(adoClient, authProvider, gitService, secretStore);
     const result = await cloneUseCase.execute({
@@ -80,9 +86,11 @@ export async function runInteractiveList(): Promise<void> {
       authMode: config.authMode,
     });
 
-    Formatter.success(
-      `Cloned "${result.repository.name}" to:\n   ${result.clonedTo}`
-    );
+    if (!result.alreadyExisted) {
+      Formatter.success(`Cloned "${result.repository.name}" to:\n   ${result.clonedTo}`);
+    }
+
+    await runPostCloneFlow(result.clonedTo, result.alreadyExisted, gitService, configStore);
   } catch (error) {
     if (error instanceof AppError) {
       Formatter.error(error.message);
